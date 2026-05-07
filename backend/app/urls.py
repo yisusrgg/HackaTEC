@@ -1,6 +1,9 @@
-import views
-from django.urls import path 
+from django.urls import path
+
+from .views import DebugView, model_status_api, open_camera_window_api
 
 urlpatterns = [
-    path('/', views.LoginView.as_view(), name='login'),
+    path('', DebugView.as_view(), name='debug-home'),
+    path('api/models/', model_status_api, name='model-status'),
+    path('api/camera/open/', open_camera_window_api, name='open-camera-window'),
 ]

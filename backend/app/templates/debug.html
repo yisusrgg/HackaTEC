@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inspector de Modelos</title>
+  <style>
+    :root {
+      --bg: #08111d;
+      --panel: rgba(12, 22, 38, 0.88);
+      --text: #edf3fb;
+      --muted: #8ea4c7;
+      --accent: #69d2c9;
+      --accent-2: #ffbf69;
+      --danger: #ff6b6b;
+      --border: rgba(140, 170, 210, 0.16);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(105, 210, 201, 0.16), transparent 24%),
+        radial-gradient(circle at top right, rgba(255, 191, 105, 0.12), transparent 22%),
+        linear-gradient(180deg, #050914 0%, var(--bg) 100%);
+    }
+
+    .shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+
+    .hero {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--accent);
+      letter-spacing: 0.14em;
+      font-size: 12px;
+      text-transform: uppercase;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 4vw, 54px);
+      line-height: 1;
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      max-width: 70ch;
+      line-height: 1.55;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: 1fr 0.9fr;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(12px);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .card-body { padding: 20px; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      background: rgba(105, 210, 201, 0.12);
+      color: var(--accent);
+    }
+
+    .pill.bad {
+      background: rgba(255, 107, 107, 0.12);
+      color: var(--danger);
+    }
+
+    .pill.warn {
+      background: rgba(255, 191, 105, 0.12);
+      color: var(--accent-2);
+    }
+
+    .model-list {
+      display: grid;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .model-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .model-name { font-weight: 700; }
+    .model-path { color: var(--muted); font-size: 13px; margin-top: 4px; word-break: break-word; }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #04111b;
+      background: linear-gradient(135deg, var(--accent), #9ff3e7);
+    }
+
+    button.secondary {
+      color: var(--text);
+      background: transparent;
+      border: 1px solid var(--border);
+    }
+
+    .error-box {
+      display: none;
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255, 107, 107, 0.1);
+      border: 1px solid rgba(255, 107, 107, 0.22);
+      color: #ffd3d3;
+      white-space: pre-wrap;
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      border-radius: 16px;
+      background: #06101c;
+      border: 1px solid var(--border);
+      color: #cfe2ff;
+      overflow: auto;
+      max-height: 360px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .note {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <span class="eyebrow">Backend de pruebas</span>
+      <h1>Modelos listos y camara nativa</h1>
+      <p class="sub">
+        En esta pantalla solo aparecen los modelos listos. Si falta alguno o hay un error, se muestra abajo.
+        La camara no se abre en la web: se lanza en una ventana normal de Windows con un boton.
+      </p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <div class="card-header">
+          <strong>Modelos cargados</strong>
+          <span id="status-pill" class="pill">Cargando...</span>
+        </div>
+        <div class="card-body">
+          <ul id="model-list" class="model-list"></ul>
+          <div id="error-box" class="error-box"></div>
+          <div class="actions">
+            <button type="button" onclick="refreshStatus()">Actualizar</button>
+            <button type="button" onclick="openCamera()">Abrir camara</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-header">
+          <strong>Salida</strong>
+          <span class="pill warn">JSON</span>
+        </div>
+        <div class="card-body">
+          <pre id="output">Esperando accion...</pre>
+          <p class="note">
+            Si pulsas <strong>Abrir camara</strong>, el backend ejecuta el comando de Django que abre la ventana nativa con OpenCV.
+          </p>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const initialStatus = {{ model_status|safe }};
+
+    function renderStatus(data) {
+      const modelList = document.getElementById('model-list');
+      const errorBox = document.getElementById('error-box');
+      const pill = document.getElementById('status-pill');
+
+      const expected = Array.isArray(data.expected_models) ? data.expected_models : [];
+      const loaded = Array.isArray(data.loaded) ? data.loaded : [];
+      const paths = data.model_paths || {};
+      const missing = Array.isArray(data.missing) ? data.missing : [];
+      const errors = Array.isArray(data.errors) ? data.errors : [];
+
+      modelList.innerHTML = '';
+
+      loaded.forEach((name) => {
+        const li = document.createElement('li');
+        li.className = 'model-item';
+        li.innerHTML = `
+          <div>
+            <div class="model-name">${name}</div>
+            <div class="model-path">${paths[name] || 'Ruta no disponible'}</div>
+          </div>
+          <span class="pill">Listo</span>
+        `;
+        modelList.appendChild(li);
+      });
+
+      if (loaded.length === expected.length && expected.length > 0 && !errors.length) {
+        pill.className = 'pill';
+        pill.textContent = 'Todos listos';
+      } else if (loaded.length > 0) {
+        pill.className = 'pill warn';
+        pill.textContent = 'Parcial';
+      } else {
+        pill.className = 'pill bad';
+        pill.textContent = 'Sin modelos';
+      }
+
+      const problems = [...errors];
+      if (missing.length) {
+        problems.push(`Faltan modelos: ${missing.join(', ')}`);
+      }
+
+      if (problems.length) {
+        errorBox.style.display = 'block';
+        errorBox.textContent = problems.join('\n');
+      } else {
+        errorBox.style.display = 'none';
+        errorBox.textContent = '';
+      }
+
+      document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function refreshStatus() {
+      const response = await fetch('/api/models/');
+      const data = await response.json();
+      renderStatus(data);
+    }
+
+    async function openCamera() {
+      const response = await fetch('/api/camera/open/');
+      const data = await response.json();
+      document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+    }
+
+    renderStatus(initialStatus);
+  </script>
+</body>
+</html>

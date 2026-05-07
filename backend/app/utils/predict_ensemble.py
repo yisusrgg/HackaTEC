@@ -14,11 +14,14 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from ensemble_boxes import weighted_boxes_fusion
 
+_UTILS_DIR = Path(__file__).resolve().parent
+_MODEL_DIR = _UTILS_DIR / "models"
+
 # ── Rutas de modelos ──────────────────────────────────────────────────────────
 MODEL_PATHS = {
-    "nano":   "models/yolov8n_aitex/best.pt",
-    "small":  "models/yolov8s_aitex/best.pt",
-    "medium": "models/yolov8m_aitex/best.pt",
+    "nano":   str(_MODEL_DIR / "yolov8n_aitex" / "best.pt"),
+    "small":  str(_MODEL_DIR / "yolov8s_aitex" / "best.pt"),
+    "medium": str(_MODEL_DIR / "yolov8m_aitex" / "best.pt"),
 }
 
 # Pesos WBF basados en mAP50 real del test set:
@@ -95,7 +98,7 @@ def load_models():
         _models[name] = YOLO(str(p))
         print(f"[OK] Modelo cargado: {name} ({path})")
     if not _models:
-        raise RuntimeError("Ningún modelo encontrado. Ejecuta verify_models.py primero.")
+        raise RuntimeError("Ningún modelo encontrado. Revisa que los archivos .pt existan en app/utils/models.")
     return _models
 
 
