@@ -2,17 +2,18 @@
 
 import cv2
 import time
-from .predict_ensemble import draw_overlay, load_models, predict_ensemble
+from .predict_ensemble import MODEL_DEVICE, draw_overlay, load_models, predict_ensemble
 
 
 class CameraStream:
     """Manages a live camera stream with YOLO detections."""
 
-    def __init__(self, source='0', width=800, height=450, process_every_n=2):
+    def __init__(self, source='0', width=None, height=None, process_every_n=None):
         self.source = source
-        self.width = width
-        self.height = height
-        self.process_every_n = max(1, int(process_every_n))
+        is_cuda = str(MODEL_DEVICE).startswith('cuda')
+        self.width = width or (1280 if is_cuda else 960)
+        self.height = height or (720 if is_cuda else 540)
+        self.process_every_n = max(1, int(process_every_n or (1 if is_cuda else 2)))
         self.cap = None
         self.models_loaded = False
         self.fps_times = []
@@ -53,7 +54,7 @@ class CameraStream:
                 frame,
                 model_names=("small",),
                 preprocess=True,
-                imgsz=416,
+                imgsz=640 if str(MODEL_DEVICE).startswith('cuda') else 512,
             )
             self.last_detections = detections
         dt = time.perf_counter() - t0
@@ -103,7 +104,8 @@ def generate_mjpeg_stream(camera_stream):
                 break
 
             # Encode frame as JPEG
-            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
+            jpeg_quality = 85 if str(MODEL_DEVICE).startswith('cuda') else 80
+            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality])
             if not ret:
                 continue
 
