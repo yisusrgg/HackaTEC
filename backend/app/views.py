@@ -4,11 +4,12 @@ import sys
 from pathlib import Path
 
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from django.shortcuts import render
 from django.views import View
 
 from .utils import predict_ensemble
+from .utils.camera_stream import CameraStream, generate_mjpeg_stream
 
 
 def _serialize_status():
@@ -71,3 +72,18 @@ def open_camera_window_api(request):
         "log": str(log_path),
         "message": "Se intentó abrir la cámara; revisar el log si falla.",
     })
+
+
+def camera_stream_api(request):
+    """Stream live camera video with YOLO detections as MJPEG."""
+    camera_stream = CameraStream(source='0')
+    try:
+        camera_stream.initialize()
+    except RuntimeError as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+    response = StreamingHttpResponse(
+        generate_mjpeg_stream(camera_stream),
+        content_type='multipart/x-mixed-replace; boundary=frame'
+    )
+    return response

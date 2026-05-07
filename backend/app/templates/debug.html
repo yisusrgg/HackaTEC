@@ -69,7 +69,30 @@
     .grid {
       display: grid;
       gap: 20px;
-      grid-template-columns: 1fr 0.9fr;
+      grid-template-columns: 1.5fr 1fr;
+    }
+
+    .camera-container {
+      background: #000;
+      border-radius: 22px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 500px;
+      border: 1px solid var(--border);
+    }
+
+    .camera-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .camera-error {
+      color: var(--danger);
+      text-align: center;
+      padding: 20px;
     }
 
     .card {
@@ -195,15 +218,29 @@
 <body>
   <main class="shell">
     <section class="hero">
-      <span class="eyebrow">Backend de pruebas</span>
-      <h1>Modelos listos y camara nativa</h1>
+      <span class="eyebrow">Sistema de Inspección</span>
+      <h1>Inspector de Calidad - Streaming en Vivo</h1>
       <p class="sub">
-        En esta pantalla solo aparecen los modelos listos. Si falta alguno o hay un error, se muestra abajo.
-        La camara no se abre en la web: se lanza en una ventana normal de Windows con un boton.
+        Visualización en tiempo real de la cámara con detecciones YOLO. Los modelos se cargan automáticamente al iniciar el streaming.
       </p>
     </section>
 
     <section class="grid">
+      <article class="card">
+        <div class="card-header">
+          <strong>Stream en Vivo - YOLO Detección</strong>
+          <span class="pill">Activo</span>
+        </div>
+        <div class="card-body">
+          <div class="camera-container">
+            <img id="camera-stream" src="/api/camera/stream/" alt="Stream de cámara">
+          </div>
+          <p class="note">
+            La cámara muestra detecciones en tiempo real, FPS y latencia de procesamiento.
+          </p>
+        </div>
+      </article>
+
       <article class="card">
         <div class="card-header">
           <strong>Modelos cargados</strong>
@@ -214,21 +251,7 @@
           <div id="error-box" class="error-box"></div>
           <div class="actions">
             <button type="button" onclick="refreshStatus()">Actualizar</button>
-            <button type="button" onclick="openCamera()">Abrir camara</button>
           </div>
-        </div>
-      </article>
-
-      <article class="card">
-        <div class="card-header">
-          <strong>Salida</strong>
-          <span class="pill warn">JSON</span>
-        </div>
-        <div class="card-body">
-          <pre id="output">Esperando accion...</pre>
-          <p class="note">
-            Si pulsas <strong>Abrir camara</strong>, el backend ejecuta el comando de Django que abre la ventana nativa con OpenCV.
-          </p>
         </div>
       </article>
     </section>
@@ -286,20 +309,12 @@
         errorBox.style.display = 'none';
         errorBox.textContent = '';
       }
-
-      document.getElementById('output').textContent = JSON.stringify(data, null, 2);
     }
 
     async function refreshStatus() {
       const response = await fetch('/api/models/');
       const data = await response.json();
       renderStatus(data);
-    }
-
-    async function openCamera() {
-      const response = await fetch('/api/camera/open/');
-      const data = await response.json();
-      document.getElementById('output').textContent = JSON.stringify(data, null, 2);
     }
 
     renderStatus(initialStatus);
