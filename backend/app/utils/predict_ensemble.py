@@ -116,8 +116,15 @@ def _preprocess(frame: np.ndarray) -> np.ndarray:
 
 def _run_model(args):
     """Corre un modelo y devuelve boxes normalizadas para WBF."""
-    name, model, frame, h, w = args
-    results = model(frame, conf=WBF_SKIP_THR, iou=IOU_NMS, verbose=False)[0]
+    name, model, frame, h, w, imgsz = args
+    predict_kwargs = {
+        "conf": WBF_SKIP_THR,
+        "iou": IOU_NMS,
+        "verbose": False,
+    }
+    if imgsz is not None:
+        predict_kwargs["imgsz"] = imgsz
+    results = model(frame, **predict_kwargs)[0]
     boxes, scores, labels = [], [], []
     if results.boxes is not None and len(results.boxes):
         for box in results.boxes:
@@ -128,7 +135,28 @@ def _run_model(args):
     return boxes, scores, labels
 
 
-def predict_ensemble(frame: np.ndarray) -> list[dict]:
+def _boxes_to_detections(boxes, scores, labels, w, h):
+    detections = []
+    for box, score, label in zip(boxes, scores, labels):
+        cls_id = int(label)
+        thr = CONF_THR_BY_CLASS.get(cls_id, CONF_THR_DEFAULT)
+        if score < thr:
+            continue
+        x1 = int(box[0] * w)
+        y1 = int(box[1] * h)
+        x2 = int(box[2] * w)
+        y2 = int(box[3] * h)
+        cls_name = CLASSES[cls_id] if cls_id < len(CLASSES) else f"class_{cls_id}"
+        detections.append({
+            "class_id":   cls_id,
+            "class_name": cls_name,
+            "confidence": round(float(score), 3),
+            "bbox":       [x1, y1, x2, y2],
+        })
+    return detections
+
+
+def predict_ensemble(frame: np.ndarray, model_names=None, preprocess: bool = True, imgsz: int | None = None) -> list[dict]:
     """
     Recibe un frame BGR de OpenCV, devuelve lista de detecciones fusionadas.
 
@@ -144,13 +172,23 @@ def predict_ensemble(frame: np.ndarray) -> list[dict]:
         load_models()
 
     h, w = frame.shape[:2]
-    preprocessed = _preprocess(frame)
+    input_frame = _preprocess(frame) if preprocess else frame
 
-    model_list = list(_models.items())
-    args = [(name, model, preprocessed, h, w) for name, model in model_list]
+    if model_names is None:
+        model_list = list(_models.items())
+    else:
+        model_list = [(name, _models[name]) for name in model_names if name in _models]
 
-    with ThreadPoolExecutor(max_workers=len(args)) as ex:
-        outputs = list(ex.map(_run_model, args))
+    if not model_list:
+        return []
+
+    args = [(name, model, input_frame, h, w, imgsz) for name, model in model_list]
+
+    if len(args) == 1:
+        outputs = [_run_model(args[0])]
+    else:
+        with ThreadPoolExecutor(max_workers=len(args)) as ex:
+            outputs = list(ex.map(_run_model, args))
 
     all_boxes   = [o[0] for o in outputs]
     all_scores  = [o[1] for o in outputs]
@@ -171,25 +209,7 @@ def predict_ensemble(frame: np.ndarray) -> list[dict]:
         skip_box_thr=WBF_SKIP_THR,
     )
 
-    detections = []
-    for box, score, label in zip(fused_boxes, fused_scores, fused_labels):
-        cls_id = int(label)
-        thr = CONF_THR_BY_CLASS.get(cls_id, CONF_THR_DEFAULT)
-        if score < thr:
-            continue
-        x1 = int(box[0] * w)
-        y1 = int(box[1] * h)
-        x2 = int(box[2] * w)
-        y2 = int(box[3] * h)
-        cls_name = CLASSES[cls_id] if cls_id < len(CLASSES) else f"class_{cls_id}"
-        detections.append({
-            "class_id":   cls_id,
-            "class_name": cls_name,
-            "confidence": round(float(score), 3),
-            "bbox":       [x1, y1, x2, y2],
-        })
-
-    return detections
+    return _boxes_to_detections(fused_boxes, fused_scores, fused_labels, w, h)
 
 
 def draw_overlay(frame: np.ndarray, detections: list[dict]) -> np.ndarray:

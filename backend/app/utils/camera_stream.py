@@ -8,13 +8,16 @@ from .predict_ensemble import draw_overlay, load_models, predict_ensemble
 class CameraStream:
     """Manages a live camera stream with YOLO detections."""
 
-    def __init__(self, source='0', width=1280, height=720):
+    def __init__(self, source='0', width=640, height=360, process_every_n=4):
         self.source = source
         self.width = width
         self.height = height
+        self.process_every_n = max(1, int(process_every_n))
         self.cap = None
         self.models_loaded = False
         self.fps_times = []
+        self.frame_index = 0
+        self.last_detections = []
 
     def initialize(self):
         """Load models and open camera."""
@@ -41,9 +44,18 @@ class CameraStream:
         if not ret:
             return None
 
-        # Run inference
+        # Reducir costo: inferir solo cada N frames y reutilizar la última detección
+        self.frame_index += 1
         t0 = time.perf_counter()
-        detections = predict_ensemble(frame)
+        detections = self.last_detections
+        if self.frame_index % self.process_every_n == 0 or not self.last_detections:
+            detections = predict_ensemble(
+                frame,
+                model_names=("small",),
+                preprocess=False,
+                imgsz=320,
+            )
+            self.last_detections = detections
         dt = time.perf_counter() - t0
 
         # Calculate FPS
@@ -91,7 +103,7 @@ def generate_mjpeg_stream(camera_stream):
                 break
 
             # Encode frame as JPEG
-            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 72])
             if not ret:
                 continue
 
