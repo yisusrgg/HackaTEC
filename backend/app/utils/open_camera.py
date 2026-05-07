@@ -5,7 +5,9 @@ import sys
 
 
 if __package__ is None or __package__ == '':
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+    # Ensure the backend package is importable when running the script directly.
+    # open_camera.py is at backend/app/utils/open_camera.py, so parents[2] == backend
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from app.utils.camera_window import run_camera_window
 else:
     from .camera_window import run_camera_window

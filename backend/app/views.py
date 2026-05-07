@@ -42,17 +42,32 @@ def model_status_api(request):
 
 def open_camera_window_api(request):
     """Launch the native OpenCV camera window in a separate Windows process."""
-    script_path = Path(settings.BASE_DIR) / "app" / "utils" / "open_camera.py"
-    cmd = [sys.executable, str(script_path)]
+    # Prefer the project's virtualenv Python if present, otherwise fall back
+    venv_python = Path(settings.BASE_DIR).parent / ".venv" / "Scripts" / "python.exe"
+    python_exec = str(venv_python) if venv_python.exists() else sys.executable
+
+    # Run the launcher as a module so Python imports resolve from BASE_DIR
+    cmd = [python_exec, "-m", "app.utils.open_camera"]
 
     creationflags = 0
     if hasattr(subprocess, "CREATE_NEW_CONSOLE"):
         creationflags |= subprocess.CREATE_NEW_CONSOLE
 
-    subprocess.Popen(cmd, cwd=str(settings.BASE_DIR), creationflags=creationflags)
+    # Redirect stdout/stderr to a log file to capture any startup errors
+    log_path = Path(settings.BASE_DIR) / "open_camera.log"
+    logfile = open(str(log_path), "ab")
+
+    subprocess.Popen(
+        cmd,
+        cwd=str(settings.BASE_DIR),
+        creationflags=creationflags,
+        stdout=logfile,
+        stderr=logfile,
+    )
 
     return JsonResponse({
         "ok": True,
         "started": True,
-        "message": "Se abrio la camara en una ventana nativa.",
+        "log": str(log_path),
+        "message": "Se intentó abrir la cámara; revisar el log si falla.",
     })
