@@ -54,3 +54,36 @@ desktop.ini
 dist/
 build/
 *.egg-info/
+
+
+# React / Node.js
+frontend/node_modules/
+node_modules/
+frontend/dist/
+frontend/build/
+frontend/.next/
+.next/
+out/
+
+# Logs de npm/yarn/pnpm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Cache de Vite y herramientas de build
+frontend/.vite/
+.vite/
+frontend/coverage/
+
+# Variables de entorno del frontend
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.production.local
+
+# Archivos generados automáticamente
+frontend/.eslintcache
+*.tsbuildinfo
+
