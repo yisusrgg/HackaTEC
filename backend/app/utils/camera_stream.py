@@ -8,7 +8,7 @@ from .predict_ensemble import draw_overlay, load_models, predict_ensemble
 class CameraStream:
     """Manages a live camera stream with YOLO detections."""
 
-    def __init__(self, source='0', width=640, height=360, process_every_n=4):
+    def __init__(self, source='0', width=800, height=450, process_every_n=2):
         self.source = source
         self.width = width
         self.height = height
@@ -52,8 +52,8 @@ class CameraStream:
             detections = predict_ensemble(
                 frame,
                 model_names=("small",),
-                preprocess=False,
-                imgsz=320,
+                preprocess=True,
+                imgsz=416,
             )
             self.last_detections = detections
         dt = time.perf_counter() - t0
@@ -103,7 +103,7 @@ def generate_mjpeg_stream(camera_stream):
                 break
 
             # Encode frame as JPEG
-            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 72])
+            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
             if not ret:
                 continue
 

@@ -10,6 +10,7 @@ Uso standalone:
 
 import cv2
 import numpy as np
+import os
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from ensemble_boxes import weighted_boxes_fusion
@@ -86,10 +87,32 @@ DEFAULT_COLOR = (0, 255, 100)  # verde — defecto menor
 # ── Carga de modelos ──────────────────────────────────────────────────────────
 _models = {}
 
+
+def _resolve_device() -> str:
+    """Pick the best inference device, with env override."""
+    env_device = os.getenv("YOLO_DEVICE", "").strip()
+    if env_device:
+        return env_device
+
+    try:
+        import torch
+
+        if torch.cuda.is_available():
+            torch.backends.cudnn.benchmark = True
+            return "cuda:0"
+    except Exception:
+        pass
+
+    return "cpu"
+
+
+MODEL_DEVICE = _resolve_device()
+
 def load_models():
     """Carga los 3 modelos. Llama una vez al arrancar."""
     from ultralytics import YOLO
     global _models
+    print(f"[INFO] Inference device: {MODEL_DEVICE}")
     for name, path in MODEL_PATHS.items():
         p = Path(path)
         if not p.exists():
@@ -121,6 +144,8 @@ def _run_model(args):
         "conf": WBF_SKIP_THR,
         "iou": IOU_NMS,
         "verbose": False,
+        "device": MODEL_DEVICE,
+        "half": MODEL_DEVICE.startswith("cuda"),
     }
     if imgsz is not None:
         predict_kwargs["imgsz"] = imgsz
