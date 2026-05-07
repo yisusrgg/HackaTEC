@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# YOLO training runs (muy grandes — subir solo best.pt manualmente)
+runs/
+
+# Dataset redistribuido (se regenera con split_dataset.py)
+fabric-defects-split/
+
+# Dataset original (340MB — no subir a git)
+Fabric Defects.v4i.yolov8/
+
+# Pesos de modelos grandes (subir a Google Drive / releases)
+# Excepción: la carpeta models/ sí se trackea para best.pt finales
+*.pt
+!models/**/*.pt
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Logs y resultados intermedios
+*.log
+*.csv
+wandb/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env vars
+.env
+.env.local
+
+# Build
+dist/
+build/
+*.egg-info/
