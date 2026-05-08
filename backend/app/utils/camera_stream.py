@@ -89,51 +89,59 @@ class CameraStream:
 
 
 def generate_mjpeg_stream(camera_stream, validation_id: int | None = None, update_interval: float = 2.0):
-    """Generate MJPEG stream frames.
-    
-    Yields bytes for MJPEG protocol:
-        --frame
-        Content-Type: image/jpeg
-        Content-Length: <size>
-        
-        <jpeg_data>
-    """
     last_write = 0.0
-    seen_queue = []
+    
     try:
         while True:
             frame = camera_stream.get_frame()
             if frame is None:
                 break
 
-            # Collect detected class names from the last inference
-            try:
-                detections = camera_stream.last_detections or []
-                class_names = [d['class_name'] for d in detections]
-            except Exception:
-                class_names = []
+            # 1. Extraer los nombres de los defectos de forma segura
+            class_names = []
+            if camera_stream.last_detections:
+                for d in camera_stream.last_detections:
+                    try:
+                        # Dependiendo de tu YOLO, 'd' puede ser un diccionario o un objeto
+                        if isinstance(d, dict):
+                            name = d.get('class_name', d.get('name', 'desconocido'))
+                        else:
+                            name = getattr(d, 'class_name', getattr(d, 'name', 'desconocido'))
+                        class_names.append(name)
+                    except Exception as e:
+                        print(f"Error extrayendo nombre de defecto: {e}")
 
-            # Throttle DB writes: only write if there are detections and interval passed
+            # 2. Guardar en la Base de Datos si pasó el intervalo de tiempo
             now = time.time()
             if validation_id and class_names and (now - last_write) >= update_interval:
                 try:
                     v = Validacion.objects.get(pk=validation_id)
-                    current = v.tipo_defectos or []
-                    # append detected names (allow duplicates to preserve timeline)
-                    new_list = current + class_names
-                    v.tipo_defectos = new_list
-                    # Optionally increment defectos count
-                    try:
-                        v.defectos = (v.defectos or 0) + len(class_names)
-                    except Exception:
-                        v.defectos = len(class_names)
-                    v.save()
-                    last_write = now
-                except Exception:
-                    # Ignore DB errors to avoid breaking the stream
-                    pass
+                    
+                    # Asegurarnos de que current es una lista
+                    current = v.tipo_defectos if isinstance(v.tipo_defectos, list) else []
+                    
+                    # ACUMULAR en la lista (evitando duplicados seguidos si quieres)
+                    # Si quieres todos, usa: new_list = current + class_names
+                    # Para agregar solo los que no estén ya en la lista general:
+                    new_list = current.copy()
+                    for name in class_names:
+                        if name not in new_list:
+                            new_list.append(name)
 
-            # Encode frame as JPEG
+                    v.tipo_defectos = new_list
+                    # Actualizar conteo de defectos (basado en cuántos tipos distintos encontró)
+                    v.defectos = len(new_list) 
+                    v.save()
+                    
+                    last_write = now
+                    print(f"✅ DB ACTUALIZADA | Validación #{validation_id} | Defectos: {new_list}")
+                
+                except Validacion.DoesNotExist:
+                    print(f"❌ ERROR: Validación #{validation_id} no existe en la BD.")
+                except Exception as e:
+                    print(f"❌ ERROR AL GUARDAR EN DB: {e}")
+
+            # 3. Codificar el frame a JPEG
             jpeg_quality = 85 if str(MODEL_DEVICE).startswith('cuda') else 80
             ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, jpeg_quality])
             if not ret:
