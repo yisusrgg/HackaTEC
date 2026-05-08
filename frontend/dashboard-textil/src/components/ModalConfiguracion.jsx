@@ -1,11 +1,7 @@
 import React from 'react';
 
 function ModalConfiguracion({ isOpen, onClose, onConfirm }) {
-  const [datos, setDatos] = React.useState({
-    proceso: 'Rollo',
-    lote: '',
-    encargado: ''
-  });
+  const [datos, setDatos] = React.useState({ proceso: 'Rollo', lote: '', encargado: '' });
 
   if (!isOpen) return null;
 
@@ -15,72 +11,88 @@ function ModalConfiguracion({ isOpen, onClose, onConfirm }) {
   };
 
   return (
-    // Contenedor principal con fondo traslúcido y desenfoque
-    // El onClick aquí detecta el clic en el fondo
-    <div 
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all"
-      onClick={onClose} 
+    <div
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}
     >
-      {/* Contenido del Modal: detiene la propagación del click para que no se cierre al tocar el formulario */}
-      <div 
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-300"
-        onClick={(e) => e.stopPropagation()} 
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="bg-blue-600 p-6 text-white relative">
-          <h2 className="text-xl font-bold">Configuración de Proceso</h2>
-          <p className="text-blue-100 text-sm">Ingrese los datos para iniciar el monitoreo</p>
-          
-          {/* Botón de cerrar opcional en la esquina */}
-          <button 
+        {/* Header */}
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-5 flex justify-between items-start">
+          <div>
+            <h2 className="text-white font-bold text-lg">Nuevo Proceso</h2>
+            <p className="text-indigo-200 text-sm mt-0.5">Configure los datos antes de iniciar</p>
+          </div>
+          <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-blue-200 hover:text-white transition-colors"
+            className="text-indigo-300 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10"
           >
-            ✕
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-5">
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Tipo de Proceso</label>
-            <select 
-              className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-blue-500 focus:ring-0 transition-all outline-none"
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              Tipo de Proceso
+            </label>
+            <select
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all bg-white"
               value={datos.proceso}
-              onChange={(e) => setDatos({...datos, proceso: e.target.value})}
+              onChange={(e) => setDatos({ ...datos, proceso: e.target.value })}
             >
-              <option>Rollo</option>
-              <option>Corte</option>
-              <option>Embalaje</option>
+              <option value="Rollo">Rollo</option>
+              <option value="Corte">Corte</option>
+              <option value="Embalaje">Embalaje</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Número de Lote</label>
-            <input 
-              type="text" 
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              Número de Lote
+            </label>
+            <input
+              type="text"
               required
-              placeholder="Ej: LT-2024-001"
-              className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-blue-500 focus:ring-0 transition-all outline-none"
-              onChange={(e) => setDatos({...datos, lote: e.target.value})}
+              placeholder="Ej: LT-2025-001"
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 placeholder-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+              onChange={(e) => setDatos({ ...datos, lote: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Encargado de Supervisión</label>
-            <input 
-              type="text" 
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+              Operador Responsable
+            </label>
+            <input
+              type="text"
               required
-              placeholder="Nombre del operador"
-              className="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-blue-500 focus:ring-0 transition-all outline-none"
-              onChange={(e) => setDatos({...datos, encargado: e.target.value})}
+              placeholder="Nombre completo"
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 placeholder-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+              onChange={(e) => setDatos({ ...datos, encargado: e.target.value })}
             />
           </div>
 
-          <button 
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-200 active:scale-[0.98] mt-4"
-          >
-            Confirmar e Iniciar
-          </button>
+          <div className="pt-2 flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-all"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-lg shadow-indigo-200 active:scale-[0.98] transition-all"
+            >
+              Iniciar Proceso
+            </button>
+          </div>
         </form>
       </div>
     </div>
