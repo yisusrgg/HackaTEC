@@ -12,7 +12,16 @@ const Metric = ({ label, value, color, icon }) => (
   </div>
 );
 
-function Estadisticas({ activo }) {
+// RECIBIMOS LA PROP datos AQUÍ
+function Estadisticas({ activo, datos }) {
+  // Extraemos variables seguras (si es null usamos 0)
+  const aprobadas = datos?.sin_defectos || 0;
+  const rechazadas = datos?.defectos || 0;
+  const total = aprobadas + rechazadas;
+  
+  // Calculamos la tasa (evitando dividir por 0)
+  const tasa = total > 0 ? ((aprobadas / total) * 100).toFixed(1) : '0.0';
+
   return (
     <div className={`bg-white rounded-xl border border-slate-200 shadow-sm transition-all duration-300 ${!activo ? 'opacity-50' : ''}`}>
       <div className="px-4 py-3 border-b border-slate-100">
@@ -22,7 +31,7 @@ function Estadisticas({ activo }) {
       <div className="px-4 py-1">
         <Metric
           label="Aprobadas"
-          value={activo ? '145' : '—'}
+          value={activo ? aprobadas : '—'}
           color={{ bg: 'bg-emerald-50', text: 'text-emerald-600' }}
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth={2} className="w-3.5 h-3.5">
@@ -32,7 +41,7 @@ function Estadisticas({ activo }) {
         />
         <Metric
           label="Rechazadas"
-          value={activo ? '3' : '—'}
+          value={activo ? rechazadas : '—'}
           color={{ bg: 'bg-rose-50', text: 'text-rose-600' }}
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth={2} className="w-3.5 h-3.5">
@@ -42,7 +51,7 @@ function Estadisticas({ activo }) {
         />
         <Metric
           label="Tasa de aprobación"
-          value={activo ? '98.0%' : '—'}
+          value={activo ? `${tasa}%` : '—'}
           color={{ bg: 'bg-indigo-50', text: 'text-indigo-600' }}
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth={2} className="w-3.5 h-3.5">
@@ -52,7 +61,7 @@ function Estadisticas({ activo }) {
         />
         <Metric
           label="Piezas inspeccionadas"
-          value={activo ? '148' : '—'}
+          value={activo ? total : '—'}
           color={{ bg: 'bg-slate-100', text: 'text-slate-600' }}
           icon={
             <svg viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth={2} className="w-3.5 h-3.5">

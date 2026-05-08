@@ -1,6 +1,9 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
+// IMPORTA TU IMAGEN AQUÍ (ajusta la ruta y el nombre según tu archivo)
+import logoImg from '../assets/logovision.jpeg'; 
+
 const NAV_ITEMS = [
   {
     to: '/',
@@ -30,14 +33,19 @@ function Sidebar({ expandido, setExpandido }) {
 
       {/* Logo / Brand */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-slate-800">
-        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} className="w-4 h-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-          </svg>
+        
+        {/* LA IMAGEN REEMPLAZA AL CONTENEDOR MORADO CON SVG */}
+        <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+          <img 
+            src={logoImg} 
+            alt="Visión Textil Logo" 
+            className="w-full h-full object-contain rounded-lg" 
+          />
         </div>
+
         {expandido && (
           <div className="overflow-hidden">
-            <p className="text-white font-bold text-sm leading-tight">TextilQC</p>
+            <p className="text-white font-bold text-sm leading-tight">Visión Textil</p>
             <p className="text-slate-400 text-xs">Control de Calidad</p>
           </div>
         )}

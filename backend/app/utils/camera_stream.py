@@ -110,6 +110,9 @@ def generate_mjpeg_stream(camera_stream, validation_id: int | None = None, updat
                         class_names.append(name)
                     except Exception as e:
                         print(f"Error extrayendo nombre de defecto: {e}")
+            
+            if class_names:
+                print(f" YOLO detectó en este frame: {class_names}")
 
             # 2. Guardar en la Base de Datos si pasó el intervalo de tiempo
             now = time.time()

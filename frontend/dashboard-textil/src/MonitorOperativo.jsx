@@ -14,6 +14,11 @@ function MonitorOperativo() {
   const [camaraError, setCamaraError] = React.useState('');
   const [streamToken, setStreamToken] = React.useState(0);
   const [validationId, setValidationId] = React.useState(null);
+  const [datosValidacion, setDatosValidacion] = React.useState({
+    defectos: 0,
+    sin_defectos: 0,
+    tipo_defectos: []
+  });
 
   // Ensure the stream is requested as soon as the page loads
   React.useEffect(() => {
@@ -33,42 +38,91 @@ function MonitorOperativo() {
     }
   };
 
-  const confirmarInicio = async (datos) => {
-    // Create operador -> lote -> validacion via API, then start
-    try {
-      // create operador
-      const opRes = await fetch(`${API_BASE}/api/operadores/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre: datos.encargado, proceso: datos.proceso }),
-      });
-      const operador = await opRes.json();
+  React.useEffect(() => {
+    let intervalo;
+    if (procesoActivo && validationId) {
+      intervalo = setInterval(async () => {
+        try {
+          const res = await fetch(`${API_BASE}/api/validaciones/${validationId}/`);
+          if (res.ok) {
+            const data = await res.json();
+            console.log("Datos frescos recibidos del backend:", data);
+            setDatosValidacion(data);
+          }
+        } catch (error) {
+          console.error("Error al obtener datos en tiempo real:", error);
+        }
+      }, 2000); // 2000 ms = 2 segundos
+    }
 
-      // create lote (cantidad_lote unknown -> 0)
+    return () => clearInterval(intervalo);
+  }, [procesoActivo, validationId]);
+
+  const confirmarInicio = async (datos) => {
+    try {
+      const operadorId = parseInt(datos.operadorId, 10);
+      const cantidadPiezas = parseInt(datos.cantidad, 10) || 0; 
+
+      if (!operadorId) {
+        throw new Error("ID de Operador inválido. ¿Seleccionaste uno en el modal?");
+      }
+
+      // CAMBIO AQUÍ: operador_id en lugar de operador
+      const payloadLote = { 
+        descripcion: datos.lote, 
+        cantidad_lote: cantidadPiezas, 
+        operador_id: operadorId 
+      };
+
       const loteRes = await fetch(`${API_BASE}/api/lotes/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ descripcion: datos.lote, cantidad_lote: 0, operador_id: operador.id }),
+        body: JSON.stringify(payloadLote),
       });
+
+      if (!loteRes.ok) {
+        const errorData = await loteRes.text();
+        throw new Error(`Fallo en Lotes (${loteRes.status}): ${errorData}`);
+      }
+      
       const lote = await loteRes.json();
 
-      // create validacion
+      // CAMBIO AQUÍ: lote_id y operador_id
+      const payloadValidacion = { 
+        defectos: 0, 
+        sin_defectos: 0, 
+        tipo_defectos: [], 
+        lote_id: lote.id,
+        operador_id: operadorId 
+      };
+
       const valRes = await fetch(`${API_BASE}/api/validaciones/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ defectos: 0, sin_defectos: 0, tipo_defectos: [], lote_id: lote.id, operador_id: operador.id }),
+        body: JSON.stringify(payloadValidacion),
       });
+
+      if (!valRes.ok) {
+        const errorData = await valRes.text();
+        throw new Error(`Fallo en Validaciones (${valRes.status}): ${errorData}`);
+      }
+
       const validacion = await valRes.json();
 
-      setInfoProceso(datos);
+      setInfoProceso({
+        ...datos,
+        encargado: datos.encargadoNombre || 'Operador'
+      });
+
+      setDatosValidacion({ defectos: 0, sin_defectos: 0, tipo_defectos: [] });      
       setProcesoActivo(true);
       setModalAbierto(false);
       setCamaraError('');
       setStreamToken(Date.now());
       setValidationId(validacion.id_validacion ?? validacion.id ?? null);
+      
     } catch (err) {
-      console.error('Error iniciando proceso:', err);
-      setCamaraError('No se pudo iniciar el proceso: error de conexión con el backend.');
+      setCamaraError(`Error: ${err.message}. Revisa la consola (F12).`);
       setModalAbierto(false);
     }
   };
@@ -198,8 +252,8 @@ function MonitorOperativo() {
         {/* Right panel */}
         <div className="lg:col-span-4 flex-col flex gap-4 overflow-y-auto pr-2 custom-scrollbar min-h-0">
           <Evaluacion activo={procesoActivo} />
-          <Estadisticas activo={procesoActivo} />
-          <GraficaDefectos activo={procesoActivo} />
+          <Estadisticas activo={procesoActivo} datos={datosValidacion} />
+          <GraficaDefectos activo={procesoActivo} datos={datosValidacion} />
           <div className="h-2 flex-none" />
         </div>
       </div>
