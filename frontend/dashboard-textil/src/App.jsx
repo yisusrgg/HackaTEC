@@ -52,11 +52,17 @@ function RegistrosControl() {
 // APLICACIÓN PRINCIPAL (ENRUTADOR)
 // ==========================================
 export default function App() {
+
+  const [sidebarExpandido, setSidebarExpandido] = useState(true);
+
   return (
     <Router>
       <div className="flex h-screen bg-gray-100 overflow-hidden font-sans">
-        <Sidebar />
-        <div className="flex-1 overflow-y-auto">
+        <Sidebar 
+          expandido={sidebarExpandido} 
+          setExpandido={setSidebarExpandido}
+        />
+        <div className="flex-1 overflow-y-auto transition-all duration-300">
           <Routes>
             <Route path="/" element={<MonitorOperativo />} />
             <Route path="/registros" element={<RegistrosControl />} />

@@ -27,7 +27,7 @@ function ModalConfiguracion({ isOpen, onClose, onConfirm }) {
         onClick={(e) => e.stopPropagation()} 
       >
         <div className="bg-blue-600 p-6 text-white relative">
-          <h2 className="text-xl font-bold">Configuración de Sesión</h2>
+          <h2 className="text-xl font-bold">Configuración de Proceso</h2>
           <p className="text-blue-100 text-sm">Ingrese los datos para iniciar el monitoreo</p>
           
           {/* Botón de cerrar opcional en la esquina */}

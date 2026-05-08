@@ -2,6 +2,7 @@ import React from 'react'
 import Estadisticas from './components/Estadisticas';
 import Evaluacion from './components/Evaluacion';
 import ModalConfiguracion from './components/ModalConfiguracion';
+import GraficaDefectos from './components/GraficaDefectos';
 
 function MonitorOperativo() {
     const [procesoActivo, setProcesoActivo] = React.useState(false);
@@ -25,9 +26,6 @@ function MonitorOperativo() {
         setModalConfiguracionAbierto(false);
     };
     
-    const toggleProceso = () => {
-        setProcesoActivo(!procesoActivo);
-    }    
   
     return (
       <div className="p-6 h-full flex flex-col">
@@ -59,11 +57,10 @@ function MonitorOperativo() {
           </div>
   
           {/* Panel de Decisiones */}
-          <div className="w-64 flex flex-col gap-4">
+          <div className="w-80 flex flex-col gap-4 transition-all">
             <Evaluacion activo={procesoActivo} />
-            
-            {/* Métricas rápidas */}
             <Estadisticas activo={procesoActivo} />
+            <GraficaDefectos activo={procesoActivo} />
           </div>
         </div>
       </div>
