@@ -12,18 +12,26 @@ def serialize_lote(obj: Lote) -> Dict[str, Any]:
         "id": obj.pk,
         "descripcion": obj.descripcion,
         "cantidad_lote": obj.cantidad_lote,
-        "operador": obj.operador_id,
+        "operador": serialize_operador(obj.operador),
         "fecha_creacion": obj.fecha_creacion.isoformat(),
     }
 
 
 def serialize_validacion(obj: Validacion) -> Dict[str, Any]:
     return {
-        "id": obj.pk,
+        "id_validacion": obj.pk,
         "defectos": obj.defectos,
         "sin_defectos": obj.sin_defectos,
         "tipo_defectos": obj.tipo_defectos,
-        "lote": obj.lote_id,
-        "operador": obj.operador_id,
+        "lote": {
+            "id": obj.lote_id,
+            "descripcion": obj.lote.descripcion,
+            "cantidad_lote": obj.lote.cantidad_lote,
+        },
+        "operador": {
+            "id": obj.operador_id,
+            "nombre": obj.operador.nombre,
+            "proceso": obj.operador.proceso,
+        },
         "fecha": obj.fecha.isoformat(),
     }

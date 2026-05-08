@@ -88,13 +88,24 @@ function StatCard({ label, value, sub, color }) {
   );
 }
 
+const API = 'http://localhost:8000';
+
 export default function RegistrosControl() {
   const [filtroOperador, setFiltroOperador] = React.useState('');
   const [filtroEstado, setFiltroEstado] = React.useState('todos');
   const [filtroBusqueda, setFiltroBusqueda] = React.useState('');
+  const [validaciones, setValidaciones] = React.useState([]);
+  const [cargando, setCargando] = React.useState(true);
+  const [error, setError] = React.useState(null);
 
-  // En producción esto viene de: fetch('/api/validaciones/')
-  const validaciones = MOCK_VALIDACIONES;
+  React.useEffect(() => {
+    setCargando(true);
+    fetch(`${API}/api/validaciones/`)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(data => { setValidaciones(data); setError(null); })
+      .catch(e => setError(e.message))
+      .finally(() => setCargando(false));
+  }, []);
 
   const operadores = [...new Map(validaciones.map(v => [v.operador.id, v.operador])).values()];
 
@@ -127,6 +138,27 @@ export default function RegistrosControl() {
       + ' · '
       + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
   };
+
+  if (cargando) return (
+    <div className="flex-1 flex items-center justify-center bg-slate-50">
+      <div className="text-center">
+        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-sm text-slate-500">Cargando validaciones...</p>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="flex-1 flex items-center justify-center bg-slate-50">
+      <div className="text-center bg-white border border-rose-200 rounded-xl px-8 py-6 shadow-sm">
+        <p className="text-rose-600 font-semibold mb-1">Error al conectar con el servidor</p>
+        <p className="text-xs text-slate-400">{error}</p>
+        <button onClick={() => window.location.reload()} className="mt-4 text-xs bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+          Reintentar
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-6 flex flex-col gap-6 bg-slate-50 min-h-full">
@@ -294,7 +326,7 @@ export default function RegistrosControl() {
             Mostrando {filtradas.length} de {validaciones.length} registros
           </p>
           <p className="text-xs text-slate-400">
-            Los datos se cargarán desde <code className="bg-slate-200 px-1 rounded">/api/validaciones/</code>
+            Fuente: <code className="bg-slate-200 px-1 rounded">GET {API}/api/validaciones/</code>
           </p>
         </div>
       </div>
