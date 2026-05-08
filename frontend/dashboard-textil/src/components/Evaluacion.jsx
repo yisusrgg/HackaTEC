@@ -2,7 +2,7 @@ import React from 'react';
 
 function Evaluacion({ activo }) {
   return (
-    <div className={`bg-white rounded-xl border transition-all duration-300 overflow-hidden
+    <div className={`bg-white rounded-xl border transition-all duration-300 
       ${activo ? 'border-slate-200 shadow-sm' : 'border-dashed border-slate-200 opacity-60'}`}
     >
       <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
