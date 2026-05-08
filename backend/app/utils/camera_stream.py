@@ -3,6 +3,7 @@
 import cv2
 import time
 from .predict_ensemble import MODEL_DEVICE, draw_overlay, load_models, predict_ensemble
+from ..models import Validacion
 
 
 class CameraStream:
@@ -87,7 +88,7 @@ class CameraStream:
             self.cap.release()
 
 
-def generate_mjpeg_stream(camera_stream):
+def generate_mjpeg_stream(camera_stream, validation_id: int | None = None, update_interval: float = 2.0):
     """Generate MJPEG stream frames.
     
     Yields bytes for MJPEG protocol:
@@ -97,11 +98,40 @@ def generate_mjpeg_stream(camera_stream):
         
         <jpeg_data>
     """
+    last_write = 0.0
+    seen_queue = []
     try:
         while True:
             frame = camera_stream.get_frame()
             if frame is None:
                 break
+
+            # Collect detected class names from the last inference
+            try:
+                detections = camera_stream.last_detections or []
+                class_names = [d['class_name'] for d in detections]
+            except Exception:
+                class_names = []
+
+            # Throttle DB writes: only write if there are detections and interval passed
+            now = time.time()
+            if validation_id and class_names and (now - last_write) >= update_interval:
+                try:
+                    v = Validacion.objects.get(pk=validation_id)
+                    current = v.tipo_defectos or []
+                    # append detected names (allow duplicates to preserve timeline)
+                    new_list = current + class_names
+                    v.tipo_defectos = new_list
+                    # Optionally increment defectos count
+                    try:
+                        v.defectos = (v.defectos or 0) + len(class_names)
+                    except Exception:
+                        v.defectos = len(class_names)
+                    v.save()
+                    last_write = now
+                except Exception:
+                    # Ignore DB errors to avoid breaking the stream
+                    pass
 
             # Encode frame as JPEG
             jpeg_quality = 85 if str(MODEL_DEVICE).startswith('cuda') else 80

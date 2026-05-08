@@ -259,15 +259,20 @@ def open_camera_window_api(request):
 def camera_stream_api(request):
     """Stream live camera video with YOLO detections as MJPEG."""
     from .utils.camera_stream import CameraStream, generate_mjpeg_stream
-
     camera_stream = CameraStream(source='0')
     try:
         camera_stream.initialize()
     except RuntimeError as e:
         return JsonResponse({"error": str(e)}, status=500)
+    # Optional validation id to record detected defect types
+    validation_id = request.GET.get('v')
+    try:
+        validation_id = int(validation_id) if validation_id is not None else None
+    except Exception:
+        validation_id = None
 
     response = StreamingHttpResponse(
-        generate_mjpeg_stream(camera_stream),
+        generate_mjpeg_stream(camera_stream, validation_id=validation_id),
         content_type='multipart/x-mixed-replace; boundary=frame'
     )
     return response

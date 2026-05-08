@@ -13,22 +13,64 @@ function MonitorOperativo() {
   const [infoProceso, setInfoProceso] = React.useState(null);
   const [camaraError, setCamaraError] = React.useState('');
   const [streamToken, setStreamToken] = React.useState(0);
+  const [validationId, setValidationId] = React.useState(null);
 
+  // Ensure the stream is requested as soon as the page loads
+  React.useEffect(() => {
+    setStreamToken(Date.now());
+  }, []);
   const handleIniciarClick = () => {
     if (procesoActivo) {
+      // Detener: limpiar estado del proceso y del validationId para que
+      // el backend deje de escribir en la validación existente.
       setProcesoActivo(false);
       setInfoProceso(null);
+      setValidationId(null);
+      // bump token to force reload of img without ?v=
+      setStreamToken(Date.now());
     } else {
       setModalAbierto(true);
     }
   };
 
-  const confirmarInicio = (datos) => {
-    setInfoProceso(datos);
-    setProcesoActivo(true);
-    setModalAbierto(false);
-    setCamaraError('');
-    setStreamToken(Date.now());
+  const confirmarInicio = async (datos) => {
+    // Create operador -> lote -> validacion via API, then start
+    try {
+      // create operador
+      const opRes = await fetch(`${API_BASE}/api/operadores/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: datos.encargado, proceso: datos.proceso }),
+      });
+      const operador = await opRes.json();
+
+      // create lote (cantidad_lote unknown -> 0)
+      const loteRes = await fetch(`${API_BASE}/api/lotes/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ descripcion: datos.lote, cantidad_lote: 0, operador_id: operador.id }),
+      });
+      const lote = await loteRes.json();
+
+      // create validacion
+      const valRes = await fetch(`${API_BASE}/api/validaciones/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ defectos: 0, sin_defectos: 0, tipo_defectos: [], lote_id: lote.id, operador_id: operador.id }),
+      });
+      const validacion = await valRes.json();
+
+      setInfoProceso(datos);
+      setProcesoActivo(true);
+      setModalAbierto(false);
+      setCamaraError('');
+      setStreamToken(Date.now());
+      setValidationId(validacion.id_validacion ?? validacion.id ?? null);
+    } catch (err) {
+      console.error('Error iniciando proceso:', err);
+      setCamaraError('No se pudo iniciar el proceso: error de conexión con el backend.');
+      setModalAbierto(false);
+    }
   };
 
   const handleCamaraError = () => {
@@ -104,22 +146,28 @@ function MonitorOperativo() {
             : 'bg-slate-900 border-slate-700'
         }`}
         >
-            {procesoActivo && (
-                <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm text-xs text-white px-2.5 py-1.5 rounded-lg">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                CÁMARA ACTIVA
+            <div className="absolute top-3 left-3 z-10">
+              {procesoActivo ? (
+                <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-sm text-xs text-white px-2.5 py-1.5 rounded-lg">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                  CÁMARA ACTIVA
                 </div>
-            )}
+              ) : (
+                <div className="flex items-center gap-1.5 bg-black/40 backdrop-blur-sm text-xs text-slate-200 px-2.5 py-1.5 rounded-lg">
+                  PREVIEW BACKEND
+                </div>
+              )}
+            </div>
 
-            {procesoActivo ? (
-              <>
+            <>
                 <img
-                  src={`${CAMERA_STREAM_URL}?t=${streamToken}`}
-                  alt="Stream de cámara en vivo"
-                  onError={handleCamaraError}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
+                src={`${CAMERA_STREAM_URL}?t=${streamToken}${validationId ? `&v=${validationId}` : ''}`}
+                alt="Stream de cámara en vivo"
+                onError={handleCamaraError}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
 
+              {procesoActivo && (
                 <div className="absolute bottom-3 left-3 right-3 z-10 flex items-center justify-between gap-3 rounded-xl bg-black/55 backdrop-blur-sm px-4 py-3 text-white border border-white/10">
                   <div>
                     <p className="text-sm font-semibold">Vista en vivo</p>
@@ -132,27 +180,19 @@ function MonitorOperativo() {
                     <p className="text-xs font-medium text-emerald-300">MJPEG activo</p>
                   </div>
                 </div>
+              )}
 
-                {camaraError && (
-                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/80 px-6 text-center">
-                    <div className="max-w-sm rounded-2xl border border-slate-700 bg-slate-900/95 p-5 shadow-2xl">
-                      <p className="text-sm font-semibold text-white">{camaraError}</p>
-                      <p className="mt-2 text-xs text-slate-400">
-                        Abre el backend en `http://localhost:8000` y confirma que la cámara esté disponible en el equipo donde corre Django.
-                      </p>
-                    </div>
+              {camaraError && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/80 px-6 text-center">
+                  <div className="max-w-sm rounded-2xl border border-slate-700 bg-slate-900/95 p-5 shadow-2xl">
+                    <p className="text-sm font-semibold text-white">{camaraError}</p>
+                    <p className="mt-2 text-xs text-slate-400">
+                      Abre el backend en `http://localhost:8000` y confirma que la cámara esté disponible en el equipo donde corre Django.
+                    </p>
                   </div>
-                )}
-              </>
-            ) : (
-              <div className="text-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth={1} className="w-16 h-16 mx-auto mb-3">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
-                </svg>
-                <p className="text-sm font-medium text-slate-600">Inicia un proceso para activar la cámara</p>
-              </div>
-            )}
+                </div>
+              )}
+            </>
         </div>
 
         {/* Right panel */}
