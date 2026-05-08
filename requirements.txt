@@ -10,6 +10,10 @@ ensemble-boxes>=1.0.9
 opencv-python>=4.8.0
 Pillow>=10.0.0
 
+# Backend / Django
+django>=5.2.0
+PyMySQL>=1.1.0
+
 # Utilidades
 numpy>=1.24.0
 pyyaml>=6.0
