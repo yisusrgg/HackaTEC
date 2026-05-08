@@ -16,11 +16,16 @@ from .serializers import (
     serialize_lote,
     serialize_validacion,
 )
-from .utils import predict_ensemble
-from .utils.camera_stream import CameraStream, generate_mjpeg_stream
+
+
+def _get_predict_ensemble_module():
+    from .utils import predict_ensemble
+
+    return predict_ensemble
 
 
 def _serialize_status():
+    predict_ensemble = _get_predict_ensemble_module()
     status = {
         "loaded": [],
         "missing": [],
@@ -253,6 +258,8 @@ def open_camera_window_api(request):
 
 def camera_stream_api(request):
     """Stream live camera video with YOLO detections as MJPEG."""
+    from .utils.camera_stream import CameraStream, generate_mjpeg_stream
+
     camera_stream = CameraStream(source='0')
     try:
         camera_stream.initialize()

@@ -4,10 +4,15 @@ import Evaluacion from './components/Evaluacion';
 import ModalConfiguracion from './components/ModalConfiguracion';
 import GraficaDefectos from './components/GraficaDefectos';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const CAMERA_STREAM_URL = `${API_BASE}/api/camera/stream/`;
+
 function MonitorOperativo() {
   const [procesoActivo, setProcesoActivo] = React.useState(false);
   const [modalAbierto, setModalAbierto] = React.useState(false);
   const [infoProceso, setInfoProceso] = React.useState(null);
+  const [camaraError, setCamaraError] = React.useState('');
+  const [streamToken, setStreamToken] = React.useState(0);
 
   const handleIniciarClick = () => {
     if (procesoActivo) {
@@ -22,6 +27,12 @@ function MonitorOperativo() {
     setInfoProceso(datos);
     setProcesoActivo(true);
     setModalAbierto(false);
+    setCamaraError('');
+    setStreamToken(Date.now());
+  };
+
+  const handleCamaraError = () => {
+    setCamaraError('No se pudo cargar el stream. Verifica que el backend esté corriendo y que la cámara esté disponible.');
   };
 
   return (
@@ -100,15 +111,48 @@ function MonitorOperativo() {
                 </div>
             )}
 
-            <div className="text-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke={procesoActivo ? '#6366f1' : '#334155'} strokeWidth={1} className="w-16 h-16 mx-auto mb-3">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+            {procesoActivo ? (
+              <>
+                <img
+                  src={`${CAMERA_STREAM_URL}?t=${streamToken}`}
+                  alt="Stream de cámara en vivo"
+                  onError={handleCamaraError}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+
+                <div className="absolute bottom-3 left-3 right-3 z-10 flex items-center justify-between gap-3 rounded-xl bg-black/55 backdrop-blur-sm px-4 py-3 text-white border border-white/10">
+                  <div>
+                    <p className="text-sm font-semibold">Vista en vivo</p>
+                    <p className="text-xs text-slate-300">
+                      {infoProceso ? `${infoProceso.lote} · ${infoProceso.proceso}` : 'Stream desde el backend'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-300">Backend</p>
+                    <p className="text-xs font-medium text-emerald-300">MJPEG activo</p>
+                  </div>
+                </div>
+
+                {camaraError && (
+                  <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/80 px-6 text-center">
+                    <div className="max-w-sm rounded-2xl border border-slate-700 bg-slate-900/95 p-5 shadow-2xl">
+                      <p className="text-sm font-semibold text-white">{camaraError}</p>
+                      <p className="mt-2 text-xs text-slate-400">
+                        Abre el backend en `http://localhost:8000` y confirma que la cámara esté disponible en el equipo donde corre Django.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth={1} className="w-16 h-16 mx-auto mb-3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
                 </svg>
-                <p className={`text-sm font-medium ${procesoActivo ? 'text-slate-400' : 'text-slate-600'}`}>
-                {procesoActivo ? 'Esperando señal de cámara...' : 'Inicia un proceso para activar la cámara'}
-                </p>
-            </div>
+                <p className="text-sm font-medium text-slate-600">Inicia un proceso para activar la cámara</p>
+              </div>
+            )}
         </div>
 
         {/* Right panel */}
